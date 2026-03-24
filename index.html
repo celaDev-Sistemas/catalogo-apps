@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catálogo corporativo de aplicaciones</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script>
   <style>
     :root {
       --brand-900: #0b3433; --brand-800: #104947; --brand-700: #16605d;
@@ -304,7 +304,7 @@ let msalReady = false;
 const loginRequest = { scopes: ["Files.Read", "Sites.Read.All"] };
 
 async function initMsal() {
-  msalInstance = new msal.PublicClientApplication(msalConfig);
+  msalInstance = new msalBrowser.PublicClientApplication(msalConfig);
   await msalInstance.initialize();
   msalReady = true;
 }
