@@ -304,7 +304,11 @@ let msalReady = false;
 const loginRequest = { scopes: ["Files.Read", "Sites.Read.All"] };
 
 async function initMsal() {
-  msalInstance = new msalBrowser.PublicClientApplication(msalConfig);
+  // MSAL v3 expone PublicClientApplication directamente en window
+  const PCA = window.msalBrowser?.PublicClientApplication
+           || window.msal?.PublicClientApplication
+           || PublicClientApplication;
+  msalInstance = new PCA(msalConfig);
   await msalInstance.initialize();
   msalReady = true;
 }
