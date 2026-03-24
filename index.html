@@ -372,9 +372,12 @@ async function loadFromSharePoint() {
     const token = await getAccessToken();
 
     // Codificar la URL compartida en base64url para Graph API
-    // Buscar el archivo en SharePoint usando Graph API con el sitio y nombre del archivo
+    // Ruta exacta del archivo en SharePoint
     const siteUrl = "celaque1.sharepoint.com:/sites/Celaque";
-    const fileName = "Disponibilidad licencias.xlsx";
+    // La biblioteca se llama "Sistemas" y la ruta interna es Sistemas/A. Divisiones Técnicas/...
+    const libraryName = "Sistemas";
+    // Ruta interna dentro de la biblioteca (sin repetir el nombre de la biblioteca al inicio)
+    const innerPath = "Sistemas/A. Divisiones T\u00e9cnicas/Aplicaciones/Plataformas y Accesos/Disponibilidad licencias.xlsx";
 
     // Obtener el sitio
     const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteUrl}`, {
@@ -383,22 +386,37 @@ async function loadFromSharePoint() {
     const siteData = await siteRes.json();
     if (siteData.error) throw new Error("Error accediendo al sitio: " + siteData.error.message);
 
-    // Buscar el archivo en el sitio
-    const searchRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteData.id}/drive/root/search(q='${encodeURIComponent(fileName)}')`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const searchData = await searchRes.json();
-    if (searchData.error) throw new Error("Error buscando archivo: " + searchData.error.message);
+    // Obtener la lista de drives para encontrar la biblioteca "Sistemas"
+    const drivesRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteData.id}/drives`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const drivesData = await drivesRes.json();
+    if (drivesData.error) throw new Error("Error obteniendo bibliotecas: " + drivesData.error.message);
 
-    const fileItem = searchData.value?.find(f => f.name === fileName);
-    if (!fileItem) throw new Error(`No se encontró el archivo "${fileName}" en SharePoint.`);
+    const drive = drivesData.value?.find(d => d.name === libraryName);
+    if (!drive) throw new Error(`Bibliotecas disponibles: ${drivesData.value?.map(d=>d.name).join(", ")}`);
 
-    const downloadUrl = fileItem["@microsoft.graph.downloadUrl"];
+    // Intentar primero con la ruta doble (Sistemas/Sistemas/...) y luego con la simple
+    let fileData;
+    const paths = [
+      `Sistemas/${innerPath}`,  // Sistemas/Sistemas/A. Divisiones...
+      innerPath                  // Sistemas/A. Divisiones...
+    ];
+    for (const p of paths) {
+      const res = await fetch(
+        `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${encodeURIComponent(p)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fileData = await res.json();
+      if (!fileData.error) break;
+    }
+    if (fileData.error) throw new Error("Error accediendo al archivo: " + fileData.error.message);
+
+    const downloadUrl = fileData["@microsoft.graph.downloadUrl"];
     if (!downloadUrl) throw new Error("No se pudo obtener la URL de descarga.");
 
-    document.getElementById("sourceFileName").textContent = fileItem.name;
-    document.getElementById("sourceFilePath").textContent = "SharePoint · Celaque";
+    document.getElementById("sourceFileName").textContent = fileData.name;
+    document.getElementById("sourceFilePath").textContent = "SharePoint · Plataformas y Accesos";
 
     // Descargar el archivo Excel
     const fileRes = await fetch(downloadUrl);
