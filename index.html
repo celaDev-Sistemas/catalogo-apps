@@ -372,24 +372,33 @@ async function loadFromSharePoint() {
     const token = await getAccessToken();
 
     // Codificar la URL compartida en base64url para Graph API
-    const base64 = btoa(SHAREPOINT_FILE_URL)
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
-    const sharingUrl = `https://graph.microsoft.com/v1.0/shares/u!${base64}/driveItem`;
+    // Buscar el archivo en SharePoint usando Graph API con el sitio y nombre del archivo
+    const siteUrl = "celaque1.sharepoint.com:/sites/Celaque";
+    const fileName = "Disponibilidad licencias.xlsx";
 
-    // Obtener metadata del archivo (incluye @microsoft.graph.downloadUrl)
-    const metaRes = await fetch(sharingUrl, {
+    // Obtener el sitio
+    const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteUrl}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const metaData = await metaRes.json();
-    if (metaData.error) throw new Error(metaData.error.message);
+    const siteData = await siteRes.json();
+    if (siteData.error) throw new Error("Error accediendo al sitio: " + siteData.error.message);
 
-    const downloadUrl = metaData["@microsoft.graph.downloadUrl"];
-    if (!downloadUrl) throw new Error("No se pudo obtener la URL de descarga del archivo.");
+    // Buscar el archivo en el sitio
+    const searchRes = await fetch(
+      `https://graph.microsoft.com/v1.0/sites/${siteData.id}/drive/root/search(q='${encodeURIComponent(fileName)}')`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const searchData = await searchRes.json();
+    if (searchData.error) throw new Error("Error buscando archivo: " + searchData.error.message);
 
-    document.getElementById("sourceFileName").textContent = metaData.name || "Disponibilidad licencias.xlsx";
-    document.getElementById("sourceFilePath").textContent = "SharePoint · celaque1";
+    const fileItem = searchData.value?.find(f => f.name === fileName);
+    if (!fileItem) throw new Error(`No se encontró el archivo "${fileName}" en SharePoint.`);
+
+    const downloadUrl = fileItem["@microsoft.graph.downloadUrl"];
+    if (!downloadUrl) throw new Error("No se pudo obtener la URL de descarga.");
+
+    document.getElementById("sourceFileName").textContent = fileItem.name;
+    document.getElementById("sourceFilePath").textContent = "SharePoint · Celaque";
 
     // Descargar el archivo Excel
     const fileRes = await fetch(downloadUrl);
@@ -403,7 +412,8 @@ async function loadFromSharePoint() {
 
   } catch (err) {
     showError("Error al cargar desde SharePoint: " + err.message);
-    loadFallbackData();
+    // No cargar fallback silenciosamente — mostrar el error real
+    console.error("SharePoint error:", err);
   } finally {
     overlay.style.display = "none";
   }
