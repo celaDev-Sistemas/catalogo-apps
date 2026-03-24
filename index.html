@@ -375,20 +375,34 @@ async function loadFromSharePoint() {
     // Ruta exacta del archivo en SharePoint
     const siteUrl = "celaque1.sharepoint.com:/sites/Celaque";
     // La biblioteca se llama "Sistemas" y la ruta interna es Sistemas/A. Divisiones Técnicas/...
-    // Usar el link compartido codificado en base64url — funciona con cualquier cuenta que tenga acceso al archivo
-    const shareLink = "https://celaque1.sharepoint.com/:x:/s/Celaque/IQCUYlfku7siQqAKbEeixq8IAXqSjRIwn7EpCVsW-StfjIg?e=AdTxwB";
-    const base64 = btoa(shareLink).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-
-    const metaRes = await fetch(`https://graph.microsoft.com/v1.0/shares/u!${base64}/driveItem`, {
+    // Obtener el sitio
+    const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteUrl}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const metaData = await metaRes.json();
-    if (metaData.error) throw new Error("Error accediendo al archivo compartido: " + metaData.error.message + ". Asegúrate que el archivo sea accesible para toda la organización.");
+    const siteData = await siteRes.json();
+    if (siteData.error) throw new Error("Error accediendo al sitio: " + siteData.error.message);
 
-    const downloadUrl = metaData["@microsoft.graph.downloadUrl"];
+    // Obtener drives y buscar la biblioteca "Sistemas"
+    const drivesRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteData.id}/drives`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const drivesData = await drivesRes.json();
+    const drive = drivesData.value?.find(d => d.name === "Sistemas");
+    if (!drive) throw new Error("No se encontró la biblioteca Sistemas.");
+
+    // Ruta exacta del archivo dentro de la biblioteca
+    const innerPath = "Sistemas/A. Divisiones T\u00e9cnicas/Aplicaciones/Plataformas y Accesos/Disponibilidad licencias.xlsx";
+    const fileRes = await fetch(
+      `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${innerPath}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const fileData = await fileRes.json();
+    if (fileData.error) throw new Error("Archivo no encontrado: " + fileData.error.message);
+
+    const downloadUrl = fileData["@microsoft.graph.downloadUrl"];
     if (!downloadUrl) throw new Error("No se pudo obtener la URL de descarga.");
 
-    document.getElementById("sourceFileName").textContent = metaData.name || "Disponibilidad licencias.xlsx";
+    document.getElementById("sourceFileName").textContent = fileData.name || "Disponibilidad licencias.xlsx";
     document.getElementById("sourceFilePath").textContent = "SharePoint · Plataformas y Accesos";
 
     const downloadUrl = fileData["@microsoft.graph.downloadUrl"];
