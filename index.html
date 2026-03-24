@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script>
   <style>
     :root {
-      --brand-900: #0b3433; --brand-800: #104947; --brand-70: #16605d;
+      --brand-900: #0b3433; --brand-800: #104947; --brand-700: #16605d;
       --brand-600: #1c7571; --brand-500: #28908a; --brand-100: #e8f5f4;
       --brand-050: #f4fbfa; --text-900: #163231; --text-700: #466463;
       --text-500: #6f8685; --border: #d7e7e5; --white: #ffffff;
@@ -304,8 +304,14 @@ let msalReady = false;
 const loginRequest = { scopes: ["Files.Read", "Sites.Read.All"] };
 
 async function initMsal() {
-  // MSAL v3 expone PublicClientApplication directamente en window
-  const PCA = window.msalBrowser?.PublicClientApplication;
+  // Esperar hasta que window.msal esté disponible (máx 10 segundos)
+  let attempts = 0;
+  while (!window.msal?.PublicClientApplication && attempts < 20) {
+    await new Promise(r => setTimeout(r, 500));
+    attempts++;
+  }
+  const PCA = window.msal?.PublicClientApplication;
+  if (!PCA) throw new Error("MSAL no cargó después de 10 segundos.");
   msalInstance = new PCA(msalConfig);
   await msalInstance.initialize();
   msalReady = true;
@@ -589,23 +595,25 @@ document.getElementById("availabilityFilter").addEventListener("change", e=>{ st
 document.getElementById("dynamicFilterField").addEventListener("change", e=>{ state.dynamicField=e.target.value; state.dynamicValue=""; populateDynamicValues(); renderGrid(); });
 document.getElementById("dynamicFilterValue").addEventListener("change", e=>{ state.dynamicValue=e.target.value; renderGrid(); });
 
-// ── Inicialización al cargar la página ───────────────────────
-window.addEventListener("DOMContentLoaded", async () => {
-  await initMsal();
-  // Habilitar el botón una vez que MSAL está listo
-  const btn = document.getElementById("loginBtn");
-  btn.disabled = false;
-  btn.style.opacity = "1";
-  btn.style.cursor = "pointer";
-
-  await msalInstance.handleRedirectPromise();
-  const accounts = msalInstance.getAllAccounts();
-  if (accounts.length > 0) {
-    msalInstance.setActiveAccount(accounts[0]);
-    showApp(accounts[0].name || accounts[0].username);
-    await loadFromSharePoint();
+// ── Inicialización ─────────────────────────────────────────────
+(async () => {
+  try {
+    await initMsal();
+    const btn = document.getElementById("loginBtn");
+    if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer"; }
+    await msalInstance.handleRedirectPromise();
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      msalInstance.setActiveAccount(accounts[0]);
+      showApp(accounts[0].name || accounts[0].username);
+      await loadFromSharePoint();
+    }
+  } catch(e) {
+    console.error("Error inicializando MSAL:", e);
+    const btn = document.getElementById("loginBtn");
+    if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer"; btn.textContent = "Reintentar"; }
   }
-});
+})();
 </script>
 </body>
 </html>
