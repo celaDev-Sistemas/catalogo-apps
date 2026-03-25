@@ -8,599 +8,440 @@
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script>
   <style>
     :root {
-      --brand-900: #0b3433; --brand-800: #104947; --brand-700: #16605d;
-      --brand-600: #1c7571; --brand-500: #28908a; --brand-100: #e8f5f4;
-      --brand-050: #f4fbfa; --text-900: #163231; --text-700: #466463;
-      --text-500: #6f8685; --border: #d7e7e5; --white: #ffffff;
-      --danger: #b42318; --warning: #b54708; --success: #067647;
-      --shadow: 0 16px 40px rgba(16,73,71,0.12);
-      --radius-xl: 24px; --radius-lg: 18px; --radius-md: 14px;
+      --brand-900:#0b3433;--brand-800:#104947;--brand-700:#16605d;--brand-600:#1c7571;
+      --brand-500:#28908a;--brand-100:#e8f5f4;--brand-050:#f4fbfa;
+      --text-900:#163231;--text-700:#466463;--text-500:#6f8685;
+      --border:#d7e7e5;--danger:#b42318;--warning:#b54708;--success:#067647;
+      --shadow:0 16px 40px rgba(16,73,71,0.12);
+      --radius-xl:24px;--radius-lg:18px;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text-900);
-      background: radial-gradient(circle at top left, rgba(40,144,138,0.14), transparent 30%),
-                  linear-gradient(180deg, #f6fbfb 0%, #eef6f5 100%);
-      min-height: 100vh;
-    }
-    .page { width: min(1320px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 40px; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:var(--text-900);
+      background:radial-gradient(circle at top left,rgba(40,144,138,0.14),transparent 30%),
+      linear-gradient(180deg,#f6fbfb 0%,#eef6f5 100%);min-height:100vh;}
+    .page{width:min(1320px,calc(100% - 32px));margin:0 auto;padding:28px 0 40px;}
 
-    /* ── Login screen ── */
-    #loginScreen {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    }
-    .login-card {
-      background: rgba(255,255,255,0.9); border: 1px solid var(--border);
-      border-radius: var(--radius-xl); box-shadow: var(--shadow);
-      padding: 48px 40px; text-align: center; max-width: 420px; width: 100%;
-    }
-    .login-card h2 { margin: 0 0 8px; font-size: 26px; }
-    .login-card p { color: var(--text-700); margin: 0 0 28px; }
-    .login-btn {
-      display: inline-flex; align-items: center; gap: 12px;
-      padding: 14px 28px; border: none; border-radius: 14px;
-      background: var(--brand-800); color: #fff; font-weight: 700;
-      font-size: 16px; cursor: pointer; transition: .2s ease;
-    }
-    .login-btn:hover { background: var(--brand-700); }
-    .login-btn svg { width: 22px; height: 22px; }
+    #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .login-card{background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:var(--radius-xl);
+      box-shadow:var(--shadow);padding:48px 40px;text-align:center;max-width:420px;width:100%;}
+    .login-card h2{margin:0 0 8px;font-size:26px;}
+    .login-card p{color:var(--text-700);margin:0 0 28px;}
+    .login-btn{display:inline-flex;align-items:center;gap:12px;padding:14px 28px;border:none;
+      border-radius:14px;background:var(--brand-800);color:#fff;font-weight:700;font-size:16px;
+      cursor:pointer;transition:.2s ease;}
+    .login-btn:hover{background:var(--brand-700);}
+    .login-btn:disabled{opacity:0.5;cursor:not-allowed;}
 
-    /* ── Config banner (shown when IDs are placeholder) ── */
-    #configBanner {
-      background: #fff8e1; border: 1px solid #f0c040; border-radius: 14px;
-      padding: 14px 18px; margin-bottom: 20px; font-size: 14px; color: #7a5700;
-      display: none;
-    }
-    #configBanner code { background: #ffefc0; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+    .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;}
+    .user-chip{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;
+      background:rgba(255,255,255,0.85);border:1px solid var(--border);border-radius:999px;
+      font-size:14px;color:var(--text-700);}
+    .user-chip strong{color:var(--text-900);}
+    .logout-btn{padding:8px 16px;border:1px solid var(--border);border-radius:999px;
+      background:transparent;color:var(--text-700);font-size:13px;cursor:pointer;transition:.2s ease;}
+    .logout-btn:hover{background:#fff0ef;color:var(--danger);}
+    .refresh-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;
+      border:1px solid var(--border);border-radius:999px;background:transparent;
+      color:var(--brand-700);font-size:13px;cursor:pointer;transition:.2s ease;}
+    .refresh-btn:hover{background:var(--brand-100);}
 
-    /* ── Top bar ── */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px; gap: 12px;
-    }
-    .user-chip {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 8px 14px; background: rgba(255,255,255,0.85);
-      border: 1px solid var(--border); border-radius: 999px;
-      font-size: 14px; color: var(--text-700);
-    }
-    .user-chip strong { color: var(--text-900); }
-    .logout-btn {
-      padding: 8px 16px; border: 1px solid var(--border);
-      border-radius: 999px; background: transparent;
-      color: var(--text-700); font-size: 13px; cursor: pointer;
-      transition: .2s ease;
-    }
-    .logout-btn:hover { background: #fff0ef; color: var(--danger); border-color: rgba(180,35,24,.3); }
-    .refresh-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 16px; border: 1px solid var(--border);
-      border-radius: 999px; background: transparent;
-      color: var(--brand-700); font-size: 13px; cursor: pointer;
-      transition: .2s ease;
-    }
-    .refresh-btn:hover { background: var(--brand-100); }
+    .hero{display:grid;grid-template-columns:1.25fr 0.9fr;gap:20px;align-items:stretch;margin-bottom:24px;}
+    .hero-card,.panel{background:rgba(255,255,255,0.88);border:1px solid rgba(255,255,255,0.7);
+      backdrop-filter:blur(12px);border-radius:var(--radius-xl);box-shadow:var(--shadow);}
+    .hero-card{padding:28px;position:relative;overflow:hidden;}
+    .hero-card::after{content:"";position:absolute;inset:auto -70px -70px auto;width:220px;height:220px;
+      background:radial-gradient(circle,rgba(40,144,138,0.22) 0%,rgba(40,144,138,0) 70%);pointer-events:none;}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+      background:var(--brand-100);color:var(--brand-800);font-weight:700;font-size:13px;margin-bottom:12px;}
+    h1{margin:0 0 12px;font-size:clamp(28px,4vw,42px);line-height:1.02;}
+    .subtitle{margin:0;color:var(--text-700);font-size:16px;}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;}
+    .stat{background:linear-gradient(180deg,#fff 0%,#f8fcfc 100%);border:1px solid var(--border);
+      border-radius:var(--radius-lg);padding:18px;}
+    .stat-label{color:var(--text-500);font-size:13px;margin-bottom:8px;}
+    .stat-value{font-size:28px;font-weight:800;color:var(--brand-900);}
 
-    /* ── Hero ── */
-    .hero { display: grid; grid-template-columns: 1.25fr 0.9fr; gap: 20px; align-items: stretch; margin-bottom: 24px; }
-    .hero-card, .panel {
-      background: rgba(255,255,255,0.88); border: 1px solid rgba(255,255,255,0.7);
-      backdrop-filter: blur(12px); border-radius: var(--radius-xl); box-shadow: var(--shadow);
-    }
-    .hero-card { padding: 28px; position: relative; overflow: hidden; }
-    .hero-card::after {
-      content: ""; position: absolute; inset: auto -70px -70px auto;
-      width: 220px; height: 220px;
-      background: radial-gradient(circle, rgba(40,144,138,0.22) 0%, rgba(40,144,138,0) 70%);
-      pointer-events: none;
-    }
-    .eyebrow {
-      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
-      border-radius: 999px; background: var(--brand-100); color: var(--brand-800);
-      font-weight: 700; font-size: 13px; letter-spacing: .02em; margin-bottom: 12px;
-    }
-    h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 42px); line-height: 1.02; }
-    .subtitle { margin: 0; color: var(--text-700); font-size: 16px; max-width: 68ch; }
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
-    .stat { background: linear-gradient(180deg,#fff 0%,#f8fcfc 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
-    .stat-label { color: var(--text-500); font-size: 13px; margin-bottom: 8px; }
-    .stat-value { font-size: 28px; font-weight: 800; color: var(--brand-900); }
+    .panel{padding:22px;display:flex;flex-direction:column;gap:14px;}
+    .panel h2{margin:0;font-size:18px;}
+    .source-info{border:1px solid var(--border);border-radius:var(--radius-lg);
+      background:var(--brand-050);padding:16px;font-size:14px;color:var(--text-700);}
+    .source-info strong{display:block;color:var(--brand-900);margin-bottom:4px;font-size:15px;}
+    .last-update{font-size:13px;color:var(--text-500);}
+    .loading-overlay{display:none;align-items:center;justify-content:center;gap:12px;padding:40px;
+      color:var(--text-700);font-size:15px;}
+    .spinner{width:22px;height:22px;border:3px solid var(--brand-100);border-top-color:var(--brand-600);
+      border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
 
-    /* ── Source panel ── */
-    .panel { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
-    .panel h2 { margin: 0; font-size: 18px; }
-    .source-info {
-      border: 1px solid var(--border); border-radius: var(--radius-lg);
-      background: var(--brand-050); padding: 16px; font-size: 14px; color: var(--text-700);
-    }
-    .source-info strong { display: block; color: var(--brand-900); margin-bottom: 4px; font-size: 15px; }
-    .source-info .path { font-size: 12px; color: var(--text-500); word-break: break-all; margin-top: 6px; }
-    .last-update { font-size: 13px; color: var(--text-500); }
+    .controls{display:grid;grid-template-columns:1.1fr repeat(3,minmax(160px,1fr));gap:14px;margin-bottom:18px;}
+    .control{background:rgba(255,255,255,0.84);border:1px solid var(--border);border-radius:16px;
+      padding:12px 14px;box-shadow:0 10px 22px rgba(16,73,71,0.06);}
+    .control label{display:block;font-size:12px;color:var(--text-500);margin-bottom:8px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+    .control input,.control select{width:100%;border:none;background:transparent;outline:none;
+      font-size:15px;color:var(--text-900);}
 
-    /* ── Loading state ── */
-    .loading-overlay {
-      display: none; align-items: center; justify-content: center;
-      gap: 12px; padding: 40px; color: var(--text-700); font-size: 15px;
-    }
-    .spinner {
-      width: 22px; height: 22px; border: 3px solid var(--brand-100);
-      border-top-color: var(--brand-600); border-radius: 50%;
-      animation: spin .7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-bottom:18px;color:var(--text-700);font-size:14px;}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;}
+    .legend span{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
+      background:rgba(255,255,255,0.75);border:1px solid var(--border);}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+    .dot.success{background:var(--success);}.dot.warning{background:var(--warning);}.dot.danger{background:var(--danger);}
 
-    /* ── Controls ── */
-    .controls { display: grid; grid-template-columns: 1.1fr repeat(3, minmax(160px,1fr)); gap: 14px; margin-bottom: 18px; }
-    .control { background: rgba(255,255,255,0.84); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; box-shadow: 0 10px 22px rgba(16,73,71,0.06); }
-    .control label { display: block; font-size: 12px; color: var(--text-500); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-    .control input, .control select { width: 100%; border: none; background: transparent; outline: none; font-size: 15px; color: var(--text-900); }
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;}
+    .card{background:rgba(255,255,255,0.94);border:1px solid rgba(215,231,229,0.92);border-radius:22px;
+      padding:18px;box-shadow:0 18px 32px rgba(16,73,71,0.08);
+      transition:transform .22s ease,box-shadow .22s ease;display:flex;flex-direction:column;gap:16px;min-height:220px;}
+    .card:hover{transform:translateY(-5px);box-shadow:0 22px 44px rgba(16,73,71,0.14);}
+    .card-top{display:flex;align-items:center;gap:14px;}
+    .icon-wrap{width:62px;height:62px;border-radius:18px;background:linear-gradient(180deg,#f5fbfb 0%,#ebf5f4 100%);
+      border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;flex:0 0 auto;}
+    .icon-wrap img{width:68%;height:68%;object-fit:contain;}
+    .card-title{margin:0;font-size:19px;line-height:1.15;}
+    .badge{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;
+      font-size:12px;font-weight:800;}
+    .badge.success{background:#eafaf2;color:var(--success);}
+    .badge.warning{background:#fff4e6;color:var(--warning);}
+    .badge.danger{background:#fff0ef;color:var(--danger);}
+    .card-body{display:grid;gap:10px;margin-top:auto;}
+    .meta{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;
+      border-radius:14px;background:#f8fbfb;border:1px solid #edf4f3;font-size:14px;}
+    .meta strong{color:var(--brand-900);}
 
-    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; color: var(--text-700); font-size: 14px; }
-    .legend { display: flex; gap: 10px; flex-wrap: wrap; }
-    .legend span { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 999px; background: rgba(255,255,255,0.75); border: 1px solid var(--border); }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .dot.success { background: var(--success); } .dot.warning { background: var(--warning); } .dot.danger { background: var(--danger); }
+    .empty,.error-box{background:rgba(255,255,255,0.92);border:1px solid var(--border);
+      border-radius:22px;padding:24px;text-align:center;color:var(--text-700);box-shadow:var(--shadow);}
+    .error-box{display:none;color:var(--danger);border-color:rgba(180,35,24,0.18);
+      background:#fff5f4;margin-bottom:18px;}
+    .footer-note{margin-top:20px;color:var(--text-500);font-size:13px;text-align:center;}
 
-    /* ── Cards ── */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 18px; }
-    .card { background: rgba(255,255,255,0.94); border: 1px solid rgba(215,231,229,0.92); border-radius: 22px; padding: 18px; box-shadow: 0 18px 32px rgba(16,73,71,0.08); transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; display: flex; flex-direction: column; gap: 16px; min-height: 220px; }
-    .card:hover { transform: translateY(-5px); box-shadow: 0 22px 44px rgba(16,73,71,0.14); border-color: rgba(16,73,71,0.24); }
-    .card-top { display: flex; align-items: center; gap: 14px; }
-    .icon-wrap { width: 62px; height: 62px; border-radius: 18px; background: linear-gradient(180deg,#f5fbfb 0%,#ebf5f4 100%); border: 1px solid var(--border); display: grid; place-items: center; overflow: hidden; flex: 0 0 auto; }
-    .icon-wrap img { width: 68%; height: 68%; object-fit: contain; }
-    .card-title { margin: 0; font-size: 19px; line-height: 1.15; }
-    .badge { display: inline-flex; align-items: center; justify-content: center; padding: 7px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: .02em; }
-    .badge.success { background: #eafaf2; color: var(--success); }
-    .badge.warning { background: #fff4e6; color: var(--warning); }
-    .badge.danger { background: #fff0ef; color: var(--danger); }
-    .card-body { display: grid; gap: 10px; margin-top: auto; }
-    .meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 14px; background: #f8fbfb; border: 1px solid #edf4f3; font-size: 14px; }
-    .meta strong { color: var(--brand-900); }
-
-    .empty, .error-box { background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 22px; padding: 24px; text-align: center; color: var(--text-700); box-shadow: var(--shadow); }
-    .error-box { display: none; color: var(--danger); border-color: rgba(180,35,24,0.18); background: #fff5f4; margin-bottom: 18px; }
-
-    .footer-note { margin-top: 20px; color: var(--text-500); font-size: 13px; text-align: center; }
-
-    @media (max-width:1024px) { .hero { grid-template-columns: 1fr; } .controls { grid-template-columns: 1fr 1fr; } }
-    @media (max-width:640px) { .page { width: min(100% - 20px, 1320px); } .hero-card, .panel { padding: 18px; } .controls { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr; } .toolbar { align-items: flex-start; flex-direction: column; } .grid { grid-template-columns: 1fr; } }
+    @media(max-width:1024px){.hero{grid-template-columns:1fr;}.controls{grid-template-columns:1fr 1fr;}}
+    @media(max-width:640px){.controls{grid-template-columns:1fr;}.stats{grid-template-columns:1fr;}
+      .toolbar{flex-direction:column;}.grid{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
 
-  <!-- ═══ LOGIN ═══ -->
-  <div id="loginScreen">
-    <div class="login-card">
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px">
-        <rect width="48" height="48" rx="14" fill="#104947"/>
-        <path d="M14 16h20a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V20a4 4 0 0 1 4-4Zm0 5v11h20V21H14Zm5 15h10" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px">
+      <rect width="48" height="48" rx="14" fill="#104947"/>
+      <path d="M14 16h20a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V20a4 4 0 0 1 4-4Zm0 5v11h20V21H14Zm5 15h10" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h2>Catálogo de Aplicaciones</h2>
+    <p>Inicia sesión con tu cuenta corporativa para ver las licencias disponibles.</p>
+    <button class="login-btn" id="loginBtn" onclick="signIn()" disabled>
+      <svg width="22" height="22" viewBox="0 0 21 21" fill="none">
+        <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+        <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
       </svg>
-      <h2>Catálogo de Aplicaciones</h2>
-      <p>Inicia sesión con tu cuenta corporativa para ver las licencias disponibles.</p>
-      <button class="login-btn" id="loginBtn" onclick="signIn()" disabled style="opacity:0.6;cursor:not-allowed">
-        <svg viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-          <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-          <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-          <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-        </svg>
-        Iniciar sesión con Microsoft
-      </button>
-    </div>
+      Iniciar sesión con Microsoft
+    </button>
   </div>
+</div>
 
-  <!-- ═══ APP ═══ -->
-  <div id="appScreen" style="display:none">
-    <div class="page">
-
-      <div id="configBanner">
-        ⚠️ <strong>Configuración pendiente:</strong> Edita las variables <code>CLIENT_ID</code>, <code>TENANT_ID</code> y <code>SHAREPOINT_FILE_URL</code> al inicio del script para conectar con tu SharePoint real.
+<!-- APP -->
+<div id="appScreen" style="display:none">
+  <div class="page">
+    <div class="topbar">
+      <div class="user-chip">👤 Bienvenido, <strong id="userName">—</strong></div>
+      <div style="display:flex;gap:10px">
+        <button class="refresh-btn" onclick="loadFromSharePoint()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Actualizar datos
+        </button>
+        <button class="logout-btn" onclick="signOut()">Cerrar sesión</button>
       </div>
-
-      <div class="topbar">
-        <div class="user-chip">
-          👤 Bienvenido, <strong id="userName">—</strong>
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="refresh-btn" onclick="loadFromSharePoint()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            Actualizar datos
-          </button>
-          <button class="logout-btn" onclick="signOut()">Cerrar sesión</button>
-        </div>
-      </div>
-
-      <section class="hero">
-        <article class="hero-card">
-          <div class="eyebrow">Catálogo corporativo · SharePoint Live</div>
-          <h1>Disponibilidad de licencias y aplicaciones</h1>
-          <p class="subtitle">Datos sincronizados automáticamente desde SharePoint. Usa los filtros para encontrar lo que necesitas.</p>
-          <div class="stats" id="stats"></div>
-        </article>
-
-        <aside class="panel">
-          <h2>Fuente de datos</h2>
-          <div class="source-info">
-            <strong>SharePoint · Excel en línea</strong>
-            <span id="sourceFileName">Cargando...</span>
-            <div class="path" id="sourceFilePath"></div>
-          </div>
-          <div class="last-update">Última actualización: <span id="lastUpdate">—</span></div>
-          <div class="loading-overlay" id="loadingOverlay">
-            <div class="spinner"></div>
-            Descargando datos desde SharePoint...
-          </div>
-        </aside>
-      </section>
-
-      <div class="error-box" id="errorBox"></div>
-
-      <section class="controls">
-        <div class="control">
-          <label for="searchInput">Buscar aplicación</label>
-          <input id="searchInput" type="search" placeholder="Ej. Salesforce, Zoho, Box..." />
-        </div>
-        <div class="control">
-          <label for="availabilityFilter">Estado</label>
-          <select id="availabilityFilter">
-            <option value="">Todos</option>
-            <option value="success">Con disponibilidad</option>
-            <option value="warning">Disponibilidad baja</option>
-            <option value="danger">Sin disponibilidad</option>
-          </select>
-        </div>
-        <div class="control">
-          <label for="dynamicFilterField">Campo de filtro</label>
-          <select id="dynamicFilterField"><option value="">Sin campo</option></select>
-        </div>
-        <div class="control">
-          <label for="dynamicFilterValue">Valor</label>
-          <select id="dynamicFilterValue" disabled><option value="">Todos</option></select>
-        </div>
-      </section>
-
-      <div class="toolbar">
-        <div id="resultCount">0 aplicaciones</div>
-        <div class="legend">
-          <span><i class="dot success"></i> Disponible</span>
-          <span><i class="dot warning"></i> Baja disponibilidad</span>
-          <span><i class="dot danger"></i> Sin disponibilidad</span>
-        </div>
-      </div>
-
-      <main id="catalogContainer" class="grid"></main>
-      <p class="footer-note">Datos sincronizados desde SharePoint. Los iconos sin URL válida muestran un ícono genérico corporativo.</p>
     </div>
+
+    <section class="hero">
+      <article class="hero-card">
+        <div class="eyebrow">Catálogo corporativo · SharePoint Live</div>
+        <h1>Disponibilidad de licencias y aplicaciones</h1>
+        <p class="subtitle">Datos sincronizados automáticamente desde SharePoint.</p>
+        <div class="stats" id="stats"></div>
+      </article>
+      <aside class="panel">
+        <h2>Fuente de datos</h2>
+        <div class="source-info">
+          <strong>SharePoint · Excel en línea</strong>
+          <span id="sourceFileName">Cargando...</span>
+          <div id="sourceFilePath" style="font-size:12px;color:var(--text-500);margin-top:6px;"></div>
+        </div>
+        <div class="last-update">Última actualización: <span id="lastUpdate">—</span></div>
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="spinner"></div>Descargando datos desde SharePoint...
+        </div>
+      </aside>
+    </section>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <section class="controls">
+      <div class="control">
+        <label>Buscar aplicación</label>
+        <input id="searchInput" type="search" placeholder="Ej. Salesforce, Zoho..."/>
+      </div>
+      <div class="control">
+        <label>Estado</label>
+        <select id="availabilityFilter">
+          <option value="">Todos</option>
+          <option value="success">Con disponibilidad</option>
+          <option value="warning">Disponibilidad baja</option>
+          <option value="danger">Sin disponibilidad</option>
+        </select>
+      </div>
+      <div class="control">
+        <label>Campo de filtro</label>
+        <select id="dynamicFilterField"><option value="">Sin campo</option></select>
+      </div>
+      <div class="control">
+        <label>Valor</label>
+        <select id="dynamicFilterValue" disabled><option value="">Todos</option></select>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div id="resultCount">0 aplicaciones</div>
+      <div class="legend">
+        <span><i class="dot success"></i> Disponible</span>
+        <span><i class="dot warning"></i> Baja disponibilidad</span>
+        <span><i class="dot danger"></i> Sin disponibilidad</span>
+      </div>
+    </div>
+
+    <main id="catalogContainer" class="grid"></main>
+    <p class="footer-note">Datos sincronizados desde SharePoint. Iconos sin URL válida muestran ícono genérico.</p>
   </div>
+</div>
 
 <script>
-// ╔══════════════════════════════════════════════════════════════╗
-// ║           🔧 CONFIGURACIÓN — editar estos valores           ║
-// ╚══════════════════════════════════════════════════════════════╝
+// ── Configuración ─────────────────────────────────────────────
 const CLIENT_ID = "9c04551b-3267-4a30-a212-ec9143838eb6";
 const TENANT_ID = "deb13623-4618-4c6b-a268-3d5e4dec1c30";
-
-// URL completa del archivo en SharePoint (copia desde el navegador mientras tienes el archivo abierto)
-// Ejemplo: "https://miempresa.sharepoint.com/sites/TI/Shared%20Documents/licencias.xlsx"
-const SHAREPOINT_FILE_URL = "https://celaque1.sharepoint.com/:x:/s/Celaque/IQCUYlfku7siQqAKbEeixq8IAXqSjRIwn7EpCVsW-StfjIg?e=AdTxwB";
-
-// ═══════════════════════════════════════════════════════════════
-
-const IS_CONFIGURED = !CLIENT_ID.includes("TU_") && !TENANT_ID.includes("TU_") && !SHAREPOINT_FILE_URL.includes("TU_");
+const REDIRECT_URI = "https://celadev-sistemas.github.io/catalogo-apps/";
+const SITE_URL = "celaque1.sharepoint.com:/sites/Celaque";
+const FILE_PATH = "Sistemas/A. Divisiones T\u00e9cnicas/Aplicaciones/Plataformas y Accesos/Disponibilidad licencias.xlsx";
+const LIBRARY = "Sistemas";
 
 const msalConfig = {
-  auth: {
-    clientId: CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
-    redirectUri: "https://celadev-sistemas.github.io/catalogo-apps/"
-  },
+  auth: { clientId: CLIENT_ID, authority: `https://login.microsoftonline.com/${TENANT_ID}`, redirectUri: REDIRECT_URI },
   cache: { cacheLocation: "sessionStorage" }
 };
+const loginRequest = { scopes: ["Files.Read", "Sites.Read.All"] };
 
 let msalInstance;
 let msalReady = false;
-const loginRequest = { scopes: ["Files.Read", "Sites.Read.All"] };
 
+const FALLBACK_ICON = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0%' stop-color='%23104947'/><stop offset='100%' stop-color='%23207a75'/></linearGradient></defs><rect width='96' height='96' rx='22' fill='url(%23g)'/><path d='M28 30h40a6 6 0 0 1 6 6v24a6 6 0 0 1-6 6H28a6 6 0 0 1-6-6V36a6 6 0 0 1 6-6Zm0 8v20h40V38H28Zm8 28h24' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
+
+const state = { normalizedData:[], extraFields:[], search:"", availability:"", dynamicField:"", dynamicValue:"" };
+
+// ── MSAL init ─────────────────────────────────────────────────
 async function initMsal() {
-  // Esperar hasta que window.msal esté disponible (máx 10 segundos)
-  let attempts = 0;
-  while (!window.msal?.PublicClientApplication && attempts < 20) {
+  let tries = 0;
+  while (!window.msal?.PublicClientApplication && tries < 20) {
     await new Promise(r => setTimeout(r, 500));
-    attempts++;
+    tries++;
   }
-  const PCA = window.msal?.PublicClientApplication;
-  if (!PCA) throw new Error("MSAL no cargó después de 10 segundos.");
-  msalInstance = new PCA(msalConfig);
+  if (!window.msal?.PublicClientApplication) throw new Error("MSAL no cargó.");
+  msalInstance = new window.msal.PublicClientApplication(msalConfig);
   await msalInstance.initialize();
   msalReady = true;
 }
 
-const FALLBACK_ICON = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0%' stop-color='%23104947'/><stop offset='100%' stop-color='%23207a75'/></linearGradient></defs><rect width='96' height='96' rx='22' fill='url(%23g)'/><path d='M28 30h40a6 6 0 0 1 6 6v24a6 6 0 0 1-6 6H28a6 6 0 0 1-6-6V36a6 6 0 0 1 6-6Zm0 8v20h40V38H28Zm8 28h24' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
-
-const state = {
-  normalizedData: [], extraFields: [],
-  search: "", availability: "", dynamicField: "", dynamicValue: ""
-};
-
 // ── Auth ──────────────────────────────────────────────────────
 async function signIn() {
-  if (!msalReady) {
-    alert("Cargando... intenta de nuevo en un momento.");
-    return;
-  }
-  if (!IS_CONFIGURED) {
-    document.getElementById("configBanner").style.display = "block";
-    showApp("Demo User");
-    loadFallbackData();
-    return;
-  }
+  if (!msalReady) { alert("Espera un momento, cargando..."); return; }
   try {
-    const response = await msalInstance.loginPopup(loginRequest);
-    msalInstance.setActiveAccount(response.account);
-    showApp(response.account.name || response.account.username);
+    const resp = await msalInstance.loginPopup(loginRequest);
+    msalInstance.setActiveAccount(resp.account);
+    showApp(resp.account.name || resp.account.username);
     await loadFromSharePoint();
-  } catch (err) {
-    alert("Error al iniciar sesión: " + err.message);
+  } catch(e) {
+    alert("Error al iniciar sesión: " + e.message);
   }
 }
 
 function signOut() {
-  if (IS_CONFIGURED) msalInstance.logoutPopup();
+  msalInstance?.logoutPopup();
   document.getElementById("loginScreen").style.display = "flex";
   document.getElementById("appScreen").style.display = "none";
 }
 
-function showApp(userName) {
+function showApp(name) {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("appScreen").style.display = "block";
-  document.getElementById("userName").textContent = userName;
+  document.getElementById("userName").textContent = name;
 }
 
-// ── SharePoint fetch ──────────────────────────────────────────
-async function getAccessToken() {
-  const account = msalInstance.getActiveAccount();
-  const response = await msalInstance.acquireTokenSilent({ ...loginRequest, account });
-  return response.accessToken;
+async function getToken() {
+  const acct = msalInstance.getActiveAccount();
+  const r = await msalInstance.acquireTokenSilent({ ...loginRequest, account: acct });
+  return r.accessToken;
 }
 
+// ── SharePoint ────────────────────────────────────────────────
 async function loadFromSharePoint() {
-  if (!IS_CONFIGURED) { loadFallbackData(); return; }
-
   const overlay = document.getElementById("loadingOverlay");
   overlay.style.display = "flex";
   clearError();
-
   try {
-    const token = await getAccessToken();
+    const token = await getToken();
 
-    // Codificar la URL compartida en base64url para Graph API
-    // Ruta exacta del archivo en SharePoint
-    const siteUrl = "celaque1.sharepoint.com:/sites/Celaque";
-    // La biblioteca se llama "Sistemas" y la ruta interna es Sistemas/A. Divisiones Técnicas/...
-    // Obtener el sitio
-    const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteUrl}`, {
+    // 1. Obtener sitio
+    const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_URL}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const siteData = await siteRes.json();
-    if (siteData.error) throw new Error("Error accediendo al sitio: " + siteData.error.message);
+    const site = await siteRes.json();
+    if (site.error) throw new Error("Sitio: " + site.error.message);
 
-    // Obtener drives y buscar la biblioteca "Sistemas"
-    const drivesRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteData.id}/drives`, {
+    // 2. Obtener drive "Sistemas"
+    const drivesRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/drives`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const drivesData = await drivesRes.json();
-    const drive = drivesData.value?.find(d => d.name === "Sistemas");
-    if (!drive) throw new Error("No se encontró la biblioteca Sistemas.");
+    const drives = await drivesRes.json();
+    const drive = drives.value?.find(d => d.name === LIBRARY);
+    if (!drive) throw new Error(`Biblioteca "${LIBRARY}" no encontrada. Disponibles: ${drives.value?.map(d=>d.name).join(", ")}`);
 
-    // Ruta exacta del archivo dentro de la biblioteca
-    const innerPath = "Sistemas/A. Divisiones T\u00e9cnicas/Aplicaciones/Plataformas y Accesos/Disponibilidad licencias.xlsx";
-    const fileRes = await fetch(
-      `https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${innerPath}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const fileData = await fileRes.json();
-    if (fileData.error) throw new Error("Archivo no encontrado: " + fileData.error.message);
+    // 3. Obtener archivo
+    const itemRes = await fetch(`https://graph.microsoft.com/v1.0/drives/${drive.id}/root:/${FILE_PATH}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const item = await itemRes.json();
+    if (item.error) throw new Error("Archivo: " + item.error.message);
 
-    const downloadUrl = fileData["@microsoft.graph.downloadUrl"];
-    if (!downloadUrl) throw new Error("No se pudo obtener la URL de descarga.");
+    const dlUrl = item["@microsoft.graph.downloadUrl"];
+    if (!dlUrl) throw new Error("No se pudo obtener URL de descarga.");
 
-    document.getElementById("sourceFileName").textContent = fileData.name || "Disponibilidad licencias.xlsx";
+    document.getElementById("sourceFileName").textContent = item.name;
     document.getElementById("sourceFilePath").textContent = "SharePoint · Plataformas y Accesos";
 
-    const downloadUrl = fileData["@microsoft.graph.downloadUrl"];
-    if (!downloadUrl) throw new Error("No se pudo obtener la URL de descarga.");
-
-    document.getElementById("sourceFileName").textContent = fileData.name;
-    document.getElementById("sourceFilePath").textContent = "SharePoint · Plataformas y Accesos";
-
-    // Descargar el archivo Excel
-    const fileRes = await fetch(downloadUrl);
-    const buffer = await fileRes.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+    // 4. Descargar y parsear Excel
+    const buf = await (await fetch(dlUrl)).arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: false });
 
     applyData(rows);
     document.getElementById("lastUpdate").textContent = new Date().toLocaleString("es-CL");
 
-  } catch (err) {
-    showError("Error al cargar desde SharePoint: " + err.message);
-    // No cargar fallback silenciosamente — mostrar el error real
-    console.error("SharePoint error:", err);
+  } catch(e) {
+    showError("Error al cargar desde SharePoint: " + e.message);
   } finally {
     overlay.style.display = "none";
   }
 }
 
-function parseSpoUrl(url) {
-  try {
-    const u = new URL(url);
-    // Ej: https://empresa.sharepoint.com/sites/TI/Shared Documents/archivo.xlsx
-    const host = u.hostname; // empresa.sharepoint.com
-    const pathParts = u.pathname.split("/");
-    // Buscar índice de "sites" o "teams"
-    const siteIdx = pathParts.findIndex(p => p === "sites" || p === "teams");
-    if (siteIdx === -1) return null;
-    const siteName = pathParts[siteIdx + 1];
-    const site = `${host}:/sites/${siteName}`;
-    // El resto del path después del nombre del sitio es la ruta relativa
-    const filePath = pathParts.slice(siteIdx + 2).join("/");
-    return { site, filePath };
-  } catch { return null; }
-}
-
-// ── Fallback con data embebida ────────────────────────────────
-function loadFallbackData() {
-  const fallback = [
-    { "Apllicaciones": "Box", "Cantidad de Licencias": 20, "Disponibilidad": 0, "IconoURL": "" },
-    { "Apllicaciones": "Netsuite", "Cantidad de Licencias": 136, "Disponibilidad": 5, "IconoURL": "" },
-    { "Apllicaciones": "Wrike", "Cantidad de Licencias": 269, "Disponibilidad": 28, "IconoURL": "" },
-    { "Apllicaciones": "Salesforce", "Cantidad de Licencias": 45, "Disponibilidad": 5, "IconoURL": "" },
-    { "Apllicaciones": "ChatGPT", "Cantidad de Licencias": 230, "Disponibilidad": 12, "IconoURL": "" },
-    { "Apllicaciones": "Claude", "Cantidad de Licencias": 35, "Disponibilidad": 8, "IconoURL": "" },
-    { "Apllicaciones": "Office 365 Business Standard", "Cantidad de Licencias": 300, "Disponibilidad": 8, "IconoURL": "" },
-    { "Apllicaciones": "PowerBI Pro", "Cantidad de Licencias": 35, "Disponibilidad": 2, "IconoURL": "" }
-  ];
-  applyData(fallback);
-  document.getElementById("sourceFileName").textContent = "datos de ejemplo (no conectado)";
-  document.getElementById("lastUpdate").textContent = "—";
-}
-
-// ── Normalización y render (igual que la versión original) ────
-function normalizeKey(v) {
-  return String(v||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
-}
-function findKey(row, aliases) {
-  const keys = Object.keys(row||{});
-  const set = aliases.map(normalizeKey);
-  return keys.find(k => set.includes(normalizeKey(k))) || null;
-}
-function toNumber(v) {
-  if (typeof v==="number") return v;
-  const n = Number(String(v??"").replace(/,/g,".").replace(/[^0-9.-]/g,""));
-  return Number.isFinite(n) ? n : null;
-}
+// ── Normalización ─────────────────────────────────────────────
+function nKey(v) { return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+function findKey(row, aliases) { return Object.keys(row||{}).find(k => aliases.map(nKey).includes(nKey(k))) || null; }
+function toNum(v) { if(typeof v==="number") return v; const n=Number(String(v??"").replace(/,/g,".").replace(/[^0-9.-]/g,"")); return isFinite(n)?n:null; }
 function getStatus(a) {
-  if (!Number.isFinite(a) || a<=0) return { key:"danger", label:"Sin disponibilidad" };
-  if (a<=10) return { key:"warning", label:"Disponibilidad baja" };
-  return { key:"success", label:"Disponible" };
-}
-function normalizeRows(rows) {
-  if (!rows?.length) throw new Error("Sin filas válidas.");
-  const sample = rows.find(r=>r&&Object.keys(r).length)||{};
-  const appKey = findKey(sample,["Aplicacion","Aplicaciones","Apllicaciones","Application","App"]);
-  if (!appKey) throw new Error("Columna de aplicación no encontrada.");
-  const licKey = findKey(sample,["Cantidad de Licencias","CantidadLicencias","Licencias","Cantidad"]);
-  const avKey  = findKey(sample,["Disponibilidad","Disponible","Disponibles","Availability"]);
-  const icoKey = findKey(sample,["IconoURL","Icono","LogoURL","URLIcono","Image","Imagen"]);
-  const normalized = rows.filter(r=>r&&Object.values(r).some(v=>v!=null&&v!==""))
-    .map((r,i)=>{
-      const extras = Object.fromEntries(
-        Object.entries(r).filter(([k])=>![appKey,licKey,avKey,icoKey].includes(k))
-      );
-      return {
-        id: i+1,
-        application: String(r[appKey]??"").trim(),
-        licenses: licKey ? toNumber(r[licKey]) : null,
-        availability: avKey ? toNumber(r[avKey]) : null,
-        icon: icoKey ? String(r[icoKey]||"").trim() : "",
-        status: getStatus(avKey ? toNumber(r[avKey]) : null),
-        extras
-      };
-    }).filter(it=>it.application);
-  const extraFields = [...new Set(normalized.flatMap(it=>Object.keys(it.extras).filter(k=>{
-    const v=it.extras[k]; return v!=null&&v!=="";
-  })))];
-  return { normalized, extraFields };
+  if (!isFinite(a)||a<=0) return {key:"danger",label:"Sin disponibilidad"};
+  if (a<=10) return {key:"warning",label:"Disponibilidad baja"};
+  return {key:"success",label:"Disponible"};
 }
 
 function applyData(rows) {
   clearError();
-  const { normalized, extraFields } = normalizeRows(rows);
+  if (!rows?.length) { showError("Sin filas válidas."); return; }
+  const s = rows.find(r=>r&&Object.keys(r).length)||{};
+  const aK = findKey(s,["Aplicacion","Aplicaciones","Apllicaciones","Application","App"]);
+  if (!aK) { showError("Columna de aplicación no encontrada."); return; }
+  const lK = findKey(s,["Cantidad de Licencias","CantidadLicencias","Licencias","Cantidad"]);
+  const vK = findKey(s,["Disponibilidad","Disponible","Disponibles","Availability"]);
+  const iK = findKey(s,["IconoURL","Icono","LogoURL","Image","Imagen"]);
+
+  const normalized = rows
+    .filter(r=>r&&Object.values(r).some(v=>v!=null&&v!==""))
+    .map((r,i)=>{
+      const av = vK ? toNum(r[vK]) : null;
+      const extras = Object.fromEntries(Object.entries(r).filter(([k])=>![aK,lK,vK,iK].includes(k)));
+      return { id:i+1, application:String(r[aK]??"").trim(), licenses:lK?toNum(r[lK]):null,
+        availability:av, icon:iK?String(r[iK]||"").trim():"", status:getStatus(av), extras };
+    }).filter(it=>it.application);
+
+  const extraFields = [...new Set(normalized.flatMap(it=>Object.keys(it.extras).filter(k=>it.extras[k]!=null&&it.extras[k]!="")))];
   state.normalizedData = normalized;
   state.extraFields = extraFields;
-  updateDynamicFilterOptions();
+  updateFilters();
   renderStats(normalized);
   renderGrid();
 }
 
-function updateDynamicFilterOptions() {
+function updateFilters() {
   const df = document.getElementById("dynamicFilterField");
   df.innerHTML = '<option value="">Sin campo</option>';
   state.extraFields.forEach(f=>{ const o=document.createElement("option"); o.value=f; o.textContent=f; df.appendChild(o); });
   if (!state.extraFields.includes(state.dynamicField)) { state.dynamicField=""; df.value=""; }
-  populateDynamicValues();
+  updateFilterValues();
 }
-function populateDynamicValues() {
+function updateFilterValues() {
   const dv = document.getElementById("dynamicFilterValue");
   dv.innerHTML = '<option value="">Todos</option>';
   if (!state.dynamicField) { dv.disabled=true; state.dynamicValue=""; return; }
-  dv.disabled=false;
-  [...new Set(state.normalizedData.map(it=>it.extras[state.dynamicField]).filter(v=>v!=null&&v!=="").map(String))]
+  dv.disabled = false;
+  [...new Set(state.normalizedData.map(it=>it.extras[state.dynamicField]).filter(v=>v!=null&&v!="").map(String))]
     .sort((a,b)=>a.localeCompare(b,"es"))
     .forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; dv.appendChild(o); });
 }
-function getFilteredData() {
-  return state.normalizedData.filter(it=>{
-    const ms = !state.search || it.application.toLowerCase().includes(state.search);
-    const ma = !state.availability || it.status.key===state.availability;
-    const md = !state.dynamicField || !state.dynamicValue || String(it.extras[state.dynamicField]??"")==state.dynamicValue;
-    return ms&&ma&&md;
-  });
-}
+
 function renderStats(data) {
   document.getElementById("stats").innerHTML = `
     <div class="stat"><div class="stat-label">Aplicaciones</div><div class="stat-value">${data.length}</div></div>
     <div class="stat"><div class="stat-label">Licencias registradas</div><div class="stat-value">${data.reduce((s,it)=>s+(it.licenses||0),0)}</div></div>
     <div class="stat"><div class="stat-label">Disponibles</div><div class="stat-value">${data.reduce((s,it)=>s+(it.availability||0),0)}</div></div>`;
 }
-function esc(v) {
-  return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-}
-function createMetaRows(it) {
-  const rows = [];
-  if (Number.isFinite(it.licenses)) rows.push(`<div class="meta"><span>Licencias</span><strong>${it.licenses}</strong></div>`);
-  if (Number.isFinite(it.availability)) rows.push(`<div class="meta"><span>Disponibilidad</span><strong>${it.availability}</strong></div>`);
-  Object.entries(it.extras).forEach(([k,v])=>{ if(v==null||v==="") return; rows.push(`<div class="meta"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`); });
-  return rows.join("");
-}
+
+function esc(v) { return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+
 function renderGrid() {
-  const filtered = getFilteredData();
+  const filtered = state.normalizedData.filter(it=>{
+    const ms = !state.search || it.application.toLowerCase().includes(state.search);
+    const ma = !state.availability || it.status.key===state.availability;
+    const md = !state.dynamicField||!state.dynamicValue||String(it.extras[state.dynamicField]??"")==state.dynamicValue;
+    return ms&&ma&&md;
+  });
   document.getElementById("resultCount").textContent = `${filtered.length} aplicación${filtered.length===1?"":"es"}`;
-  const grid = document.getElementById("catalogContainer");
-  if (!filtered.length) { grid.innerHTML='<div class="empty">No se encontraron aplicaciones con los filtros actuales.</div>'; return; }
-  grid.innerHTML = filtered.map(it=>`
+  const g = document.getElementById("catalogContainer");
+  if (!filtered.length) { g.innerHTML='<div class="empty">No se encontraron aplicaciones.</div>'; return; }
+  g.innerHTML = filtered.map(it=>`
     <article class="card">
       <div class="card-top">
         <div class="icon-wrap">
-          <img src="${esc(it.icon||FALLBACK_ICON)}" alt="${esc(it.application)}" loading="lazy" referrerpolicy="no-referrer"
-            onerror="this.onerror=null;this.src=FALLBACK_ICON;" />
+          <img src="${esc(it.icon||FALLBACK_ICON)}" alt="${esc(it.application)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${FALLBACK_ICON}'"/>
         </div>
         <div>
           <h3 class="card-title">${esc(it.application)}</h3>
           <div class="badge ${it.status.key}">${it.status.label}</div>
         </div>
       </div>
-      <div class="card-body">${createMetaRows(it)}</div>
+      <div class="card-body">
+        ${isFinite(it.licenses)?`<div class="meta"><span>Licencias</span><strong>${it.licenses}</strong></div>`:""}
+        ${isFinite(it.availability)?`<div class="meta"><span>Disponibilidad</span><strong>${it.availability}</strong></div>`:""}
+        ${Object.entries(it.extras).filter(([,v])=>v!=null&&v!="").map(([k,v])=>`<div class="meta"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("")}
+      </div>
     </article>`).join("");
 }
-function showError(msg) { const b=document.getElementById("errorBox"); b.textContent=msg; b.style.display="block"; }
+
+function showError(m) { const b=document.getElementById("errorBox"); b.textContent=m; b.style.display="block"; }
 function clearError() { const b=document.getElementById("errorBox"); b.textContent=""; b.style.display="none"; }
 
-// ── Event listeners ───────────────────────────────────────────
+// ── Eventos ───────────────────────────────────────────────────
 document.getElementById("searchInput").addEventListener("input", e=>{ state.search=e.target.value.trim().toLowerCase(); renderGrid(); });
 document.getElementById("availabilityFilter").addEventListener("change", e=>{ state.availability=e.target.value; renderGrid(); });
-document.getElementById("dynamicFilterField").addEventListener("change", e=>{ state.dynamicField=e.target.value; state.dynamicValue=""; populateDynamicValues(); renderGrid(); });
+document.getElementById("dynamicFilterField").addEventListener("change", e=>{ state.dynamicField=e.target.value; state.dynamicValue=""; updateFilterValues(); renderGrid(); });
 document.getElementById("dynamicFilterValue").addEventListener("change", e=>{ state.dynamicValue=e.target.value; renderGrid(); });
 
-// ── Inicialización ─────────────────────────────────────────────
+// ── Arranque ──────────────────────────────────────────────────
 (async () => {
   try {
     await initMsal();
     const btn = document.getElementById("loginBtn");
-    if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer"; }
+    btn.disabled = false;
     await msalInstance.handleRedirectPromise();
     const accounts = msalInstance.getAllAccounts();
     if (accounts.length > 0) {
@@ -609,9 +450,9 @@ document.getElementById("dynamicFilterValue").addEventListener("change", e=>{ st
       await loadFromSharePoint();
     }
   } catch(e) {
-    console.error("Error inicializando MSAL:", e);
+    console.error("Error MSAL:", e);
     const btn = document.getElementById("loginBtn");
-    if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer"; btn.textContent = "Reintentar"; }
+    btn.disabled = false;
   }
 })();
 </script>
